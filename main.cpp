@@ -1,8 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <chrono>
 
-#include "Graph.hpp"
+#include "graph.hpp"
+#include "agm.hpp"
 
 void saveGraph(const Graph& g, const std::string& type)
 {
@@ -96,6 +98,35 @@ int main(int argc, char* argv[])
     }
 
     saveGraph(g, type);
+
+    std::cout << "\nCalculando as Arvores Geradoras Minimas...\n";
+
+    // --- TESTANDO KRUSKAL E MEDINDO O TEMPO ---
+    auto start_kruskal = std::chrono::high_resolution_clock::now();
+    auto resultadoKruskal = AGM::kruskal(g);
+    auto end_kruskal = std::chrono::high_resolution_clock::now();
+
+    // Calculando a diferença em milissegundos
+    std::chrono::duration<double, std::milli> tempo_kruskal = end_kruskal - start_kruskal;
+
+    std::cout << "\n--- Resultado Kruskal ---\n";
+    std::cout << "Peso Total da AGM: " << resultadoKruskal.first << "\n";
+    std::cout << "Qtd de Arestas na AGM: " << resultadoKruskal.second.size() << "\n";
+    std::cout << "Tempo de execucao: " << tempo_kruskal.count() << " ms\n";
+
+
+    // --- TESTANDO PRIM E MEDINDO O TEMPO ---
+    auto start_prim = std::chrono::high_resolution_clock::now();
+    auto resultadoPrim = AGM::prim(g);
+    auto end_prim = std::chrono::high_resolution_clock::now();
+
+    // Calculando a diferença em milissegundos
+    std::chrono::duration<double, std::milli> tempo_prim = end_prim - start_prim;
+
+    std::cout << "\n--- Resultado Prim ---\n";
+    std::cout << "Peso Total da AGM: " << resultadoPrim.first << "\n";
+    std::cout << "Qtd de Arestas na AGM: " << resultadoPrim.second.size() << "\n";
+    std::cout << "Tempo de execucao: " << tempo_prim.count() << " ms\n\n";
 
     return 0;
 }
