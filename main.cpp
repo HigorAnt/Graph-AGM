@@ -2,7 +2,7 @@
 #include <fstream>
 #include <string>
 #include <chrono>
-
+#include <cmath>
 #include "graph.hpp"
 #include "kruskal.hpp"
 #include "prim.hpp"
@@ -10,7 +10,6 @@
 void saveGraph(const Graph &g, const std::string &type)
 {
     std::string fileName = "Graph_" + type + "_" + std::to_string(g.V) + "_" + std::to_string(g.edges.size()) + ".txt";
-
     std::ofstream out(fileName);
 
     if (!out.is_open())
@@ -38,6 +37,83 @@ void saveGraph(const Graph &g, const std::string &type)
               << '\n';
 }
 
+Graph loadGraph(const std::string& fileName)
+{
+    std::ifstream in(fileName);
+
+    int V;
+    int E;
+
+    in >> V >> E;
+
+    Graph g(V);
+
+    for(int i = 0; i < E; i++)
+    {
+        int u;
+        int v;
+        double w;
+
+        in >> u >> v >> w;
+
+        g.addEdge(u, v, w);
+    }
+
+    in.close();
+
+    return g;
+}
+
+void saveResult(
+    const std::string& tipo,
+    int vertices,
+    int arestas,
+    const std::string& algoritmo,
+    double tempo, 
+    double desvio
+)
+{
+    std::ifstream check("resultados.csv");
+    bool arquivoExiste = check.good();
+    check.close();
+
+    std::ofstream out(
+        "resultados.csv",
+        std::ios::app
+    );
+
+    if (!arquivoExiste)
+    {
+        out << "tipo,vertices,arestas,algoritmo,tempo_ms,desvio_ms\n";
+    }
+
+    out << tipo << ","
+        << vertices << ","
+        << arestas << ","
+        << algoritmo << ","
+        << tempo << ","
+        << desvio
+        << "\n";
+
+    out.close();
+}
+
+double calcularDesvioPadrao(const std::vector<double>& tempos, double media){
+    if(tempos.size() < 2)
+        return 0.0;
+
+    double soma = 0;
+
+    for(double t : tempos)
+    {
+        soma += (t - media) * (t - media);
+    }
+
+    return std::sqrt(
+        soma / (tempos.size() - 1)
+    );
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 5)
@@ -54,6 +130,8 @@ int main(int argc, char *argv[])
     int V = std::stoi(argv[2]);
     int E = std::stoi(argv[3]);
     int N = std::stoi(argv[4]);
+
+    std::string fileName ="Graph_" + type + "_" + std::to_string(V) + "_" + std::to_string(E) + ".txt";
 
     if (E < V - 1)
     {
@@ -79,51 +157,54 @@ int main(int argc, char *argv[])
 
     Graph g(0);
 
-    if (type == "random")
+std::ifstream test(fileName);
+
+bool fileExists = test.good();
+
+test.close();
+
+    if(fileExists)
     {
-        g = GraphGenerator::randomWeights(V, E);
-    }
-    else if (type == "geometric")
-    {
-        g = GraphGenerator::geometricWeights(V, E);
+        std::cout << "Instancia encontrada. Reutilizando arquivo.\n";
+
+        g = loadGraph(fileName);
     }
     else
     {
+        std::cout << "Instancia inexistente. Gerando novo grafo.\n";
 
-        std::cerr
-            << "Tipo invalido. Use random ou geometric.\n";
+        if(type == "random")
+        {
+            g = GraphGenerator::randomWeights(V, E);
+        }
+        else if(type == "geometric")
+        {
+            g = GraphGenerator::geometricWeights(V, E);
+        }
+        else
+        {
+            std::cerr << "Tipo invalido. Use random ou geometric.\n";
 
-        return 1;
-    }
+            return 1;
+        }
 
     saveGraph(g, type);
+}
 
     std::cout << "\nCalculando as Arvores Geradoras Minimas...\n";
-
-    // --- TESTANDO KRUSKAL E MEDINDO O TEMPO ---
-
     std::vector<double> temposKruskal;
     std::pair<double, std::vector<Edge>> resultadoKruskal;
 
     for (int i = 0; i < N; i++)
     {
-        auto start_kruskal =
-            std::chrono::high_resolution_clock::now();
-
+        auto start_kruskal = std::chrono::high_resolution_clock::now();
         resultadoKruskal = Kruskal::run(g);
+        auto end_kruskal = std::chrono::high_resolution_clock::now();
 
-        auto end_kruskal =
-            std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> tempo_kruskal = end_kruskal - start_kruskal;
 
-        std::chrono::duration<double, std::milli>
-            tempo_kruskal =
-                end_kruskal - start_kruskal;
-
-        temposKruskal.push_back(
-            tempo_kruskal.count());
+        temposKruskal.push_back(tempo_kruskal.count());
     }
-
-    // Calcula média
 
     double somaKruskal = 0;
 
@@ -132,9 +213,9 @@ int main(int argc, char *argv[])
         somaKruskal += t;
     }
 
-    double mediaKruskal =
-        somaKruskal / temposKruskal.size();
-
+    double mediaKruskal = somaKruskal / temposKruskal.size();
+    double desvioKruskal = calcularDesvioPadrao(temposKruskal, mediaKruskal);
+    saveResult(type, V, E, "Kruskal", mediaKruskal, desvioKruskal);
     std::cout << "\n--- Resultado Kruskal ---\n";
     std::cout << "Peso Total da AGM: "
               << resultadoKruskal.first
@@ -147,31 +228,22 @@ int main(int argc, char *argv[])
     std::cout << "Tempo medio: "
               << mediaKruskal
               << " ms\n";
-
-    // --- TESTANDO PRIM E MEDINDO O TEMPO ---
+    std::cout << "Desvio padrao: "
+          << desvioKruskal << " ms\n";
 
     std::vector<double> temposPrim;
     std::pair<double, std::vector<Edge>> resultadoPrim;
 
     for (int i = 0; i < N; i++)
     {
-        auto start_prim =
-            std::chrono::high_resolution_clock::now();
-
+        auto start_prim = std::chrono::high_resolution_clock::now();
         resultadoPrim = Prim::run(g);
+        auto end_prim = std::chrono::high_resolution_clock::now();
 
-        auto end_prim =
-            std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> tempo_prim = end_prim - start_prim;
 
-        std::chrono::duration<double, std::milli>
-            tempo_prim =
-                end_prim - start_prim;
-
-        temposPrim.push_back(
-            tempo_prim.count());
+        temposPrim.push_back(tempo_prim.count());
     }
-
-    // Calcula média
 
     double somaPrim = 0;
 
@@ -180,8 +252,9 @@ int main(int argc, char *argv[])
         somaPrim += t;
     }
 
-    double mediaPrim =
-        somaPrim / temposPrim.size();
+    double mediaPrim = somaPrim / temposPrim.size();
+    double desvioPrim = calcularDesvioPadrao(temposPrim, mediaPrim);
+    saveResult(type, V, E, "Prim", mediaPrim, desvioPrim);
 
     std::cout << "\n--- Resultado Prim ---\n";
     std::cout << "Peso Total da AGM: "
@@ -195,6 +268,8 @@ int main(int argc, char *argv[])
     std::cout << "Tempo medio: "
               << mediaPrim
               << " ms\n\n";
+    std::cout << "Desvio padrao: "
+          << desvioPrim << " ms\n";
 
     return 0;
 }

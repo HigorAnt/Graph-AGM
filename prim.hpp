@@ -9,15 +9,10 @@ class Prim
 {
 public:
 
-    static std::pair<double,
-        std::vector<Edge>>
+    static std::pair<double, std::vector<Edge>>
     run(const Graph& g)
     {
-        std::vector<
-            std::vector<
-                std::pair<int,double>
-            >
-        > adj(g.V);
+        std::vector<std::vector<std::pair<int,double>>> adj(g.V);
 
         for(const auto& e : g.edges)
         {
@@ -51,8 +46,7 @@ public:
 
         while(!pq.empty())
         {
-            auto [weight, u]
-                = pq.top();
+            auto [weight, u] = pq.top();
 
             pq.pop();
 

@@ -51,7 +51,6 @@ private:
 
         std::unordered_set<long long> usedEdges;
 
-        // Passo 1: garantir conectividade
         for (int v = 1; v < V; v++) {
 
             std::uniform_int_distribution<> parentDist(0, v - 1);
@@ -65,7 +64,6 @@ private:
             usedEdges.insert(edgeKey(u, v));
         }
 
-        // Passo 2: completar até E arestas
         std::uniform_int_distribution<> vertexDist(0, V - 1);
 
         while ((int)g.edges.size() < E) {
@@ -97,7 +95,7 @@ public:
         int V,
         int E,
         int minWeight = 1,
-        int maxWeight = 1000
+        int maxWeight = 100
     ) {
 
         std::random_device rd;
@@ -120,7 +118,7 @@ public:
     static Graph geometricWeights(
         int V,
         int E,
-        int maxCoordinate = 1000
+        int maxCoordinate = 100
     ) {
 
         std::random_device rd;
