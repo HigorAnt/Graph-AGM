@@ -1,0 +1,9 @@
+tipo,vertices,arestas,algoritmo,tempo_ms,desvio_ms
+random,1000,5000,Kruskal,0.48016,0.103284
+random,1000,5000,Prim,2.7542,0.486616
+random,1000,5000,Kruskal,0.39147,0.0499089
+random,1000,5000,Prim,2.62354,1.0958
+random,1000,5000,Kruskal,0.36818,0.0551616
+random,1000,5000,Prim,2.88193,0.956961
+random,1000,5000,Kruskal,0.39375,0.0575786
+random,1000,5000,Prim,2.58853,0.550667
